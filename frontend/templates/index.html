@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text2SQL - Natural Language to SQL</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🔮 Text2SQL</h1>
+            <p class="subtitle">Convert natural language questions to SQL queries</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Database Selection -->
+            <div class="database-section">
+                <label for="db-select">Select Database:</label>
+                <select id="db-select">
+                    <option value="">Auto-detect</option>
+                    <option value="concert_singer">Concert Singer</option>
+                    <option value="car_1">Car Dealership</option>
+                    <option value="flight_2">Flight</option>
+                    <option value="employee_hire_evaluation">Employee Hire</option>
+                    <option value="cre_Doc_Template_Mgt">Document Management</option>
+                    <option value="course_teach">Course Teaching</option>
+                    <option value="museum_visit">Museum Visit</option>
+                    <option value="wta_1">Tennis (WTA)</option>
+                    <option value="battle_death">Battle Death</option>
+                    <option value="student_transcripts_tracking">Student Transcripts</option>
+                </select>
+            </div>
+
+            <!-- Question Input -->
+            <div class="input-section">
+                <label for="question-input">Your Question:</label>
+                <textarea id="question-input" placeholder="e.g., How many singers do we have?" rows="3"></textarea>
+                <button id="generate-btn" class="primary-btn">
+                    <span class="btn-text">Generate SQL</span>
+                    <span class="btn-loading" style="display: none;">⏳ Generating...</span>
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-section" style="display: none;">
+                <!-- Generated SQL -->
+                <div class="result-card">
+                    <h3>Generated SQL</h3>
+                    <div class="sql-output">
+                        <pre id="sql-output"></pre>
+                    </div>
+                    <button id="copy-sql-btn" class="secondary-btn">Copy SQL</button>
+                </div>
+
+                <!-- Retrieved Context -->
+                <div class="result-card">
+                    <h3>Retrieved Context</h3>
+                    <div class="context-section">
+                        <div class="context-item">
+                            <h4>Schema</h4>
+                            <pre id="schema-output"></pre>
+                        </div>
+                        <div class="context-item">
+                            <h4>Similar Examples</h4>
+                            <div id="examples-output"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metadata -->
+                <div class="result-card metadata">
+                    <div class="meta-item">
+                        <span class="meta-label">Database:</span>
+                        <span id="meta-db"></span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Retrieved Examples:</span>
+                        <span id="meta-examples"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Display -->
+            <div id="error-section" class="error-card" style="display: none;">
+                <h3>⚠️ Error</h3>
+                <p id="error-message"></p>
+            </div>
+        </div>
+
+        <!-- Chat History (Optional for future) -->
+        <div class="history-section" style="display: none;">
+            <h3>Recent Queries</h3>
+            <div id="history-list"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Powered by CodeT5+ and FAISS • <a href="/api/health" target="_blank">System Status</a></p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>
