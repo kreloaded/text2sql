@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pydantic
+sentence-transformers
+faiss-cpu
+numpy
+transformers
+torch
+sqlparse
