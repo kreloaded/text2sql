@@ -240,3 +240,6 @@ backend/.env
 backend/logs/
 
 *.DS_Store
+
+# Exclude any output directories
+output/

@@ -16,8 +16,8 @@ USE_HF_INFERENCE_API = True
 CUSTOM_MODEL_API_URL = os.getenv("CUSTOM_MODEL_API_URL", "")
 
 # FAISS Vector Store
-FAISS_INDEX_PATH = "vector_service/faiss.index"
-METADATA_PATH = "vector_service/metadata.json"
+FAISS_INDEX_PATH = "vector_service/output/faiss.index"
+METADATA_PATH = "vector_service/output/metadata.json"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # Retrieval Settings

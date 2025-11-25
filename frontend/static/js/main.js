@@ -2,14 +2,12 @@
 
 // DOM Elements
 const questionInput = document.getElementById('question-input');
-const dbSelect = document.getElementById('db-select');
 const generateBtn = document.getElementById('generate-btn');
 const resultsSection = document.getElementById('results-section');
 const errorSection = document.getElementById('error-section');
 const sqlOutput = document.getElementById('sql-output');
 const schemaOutput = document.getElementById('schema-output');
 const examplesOutput = document.getElementById('examples-output');
-const metaDb = document.getElementById('meta-db');
 const metaExamples = document.getElementById('meta-examples');
 const errorMessage = document.getElementById('error-message');
 const copySqlBtn = document.getElementById('copy-sql-btn');
@@ -28,7 +26,6 @@ copySqlBtn.addEventListener('click', copyToClipboard);
 // Main generation handler
 async function handleGenerate() {
     const question = questionInput.value.trim();
-    const dbId = dbSelect.value;
 
     if (!question) {
         showError('Please enter a question');
@@ -47,8 +44,7 @@ async function handleGenerate() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                question: question,
-                db_id: dbId || null
+                question: question
             })
         });
 
@@ -68,6 +64,11 @@ async function handleGenerate() {
 
 // Display results
 function displayResults(data) {
+    // Display the original question
+    const questionDisplay = document.getElementById('question-display');
+    const questionInput = document.getElementById('question-input');
+    questionDisplay.textContent = questionInput.value;
+
     // Generated SQL
     sqlOutput.textContent = data.generated_sql || 'No SQL generated';
 
@@ -96,7 +97,6 @@ function displayResults(data) {
     }
 
     // Metadata
-    metaDb.textContent = data.db_id || 'Not specified';
     metaExamples.textContent = examples.length;
 
     // Show results

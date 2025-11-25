@@ -16,24 +16,6 @@
         </header>
 
         <div class="main-content">
-            <!-- Database Selection -->
-            <div class="database-section">
-                <label for="db-select">Select Database:</label>
-                <select id="db-select">
-                    <option value="">Auto-detect</option>
-                    <option value="concert_singer">Concert Singer</option>
-                    <option value="car_1">Car Dealership</option>
-                    <option value="flight_2">Flight</option>
-                    <option value="employee_hire_evaluation">Employee Hire</option>
-                    <option value="cre_Doc_Template_Mgt">Document Management</option>
-                    <option value="course_teach">Course Teaching</option>
-                    <option value="museum_visit">Museum Visit</option>
-                    <option value="wta_1">Tennis (WTA)</option>
-                    <option value="battle_death">Battle Death</option>
-                    <option value="student_transcripts_tracking">Student Transcripts</option>
-                </select>
-            </div>
-
             <!-- Question Input -->
             <div class="input-section">
                 <label for="question-input">Your Question:</label>
@@ -46,39 +28,39 @@
 
             <!-- Results Section -->
             <div id="results-section" style="display: none;">
-                <!-- Generated SQL -->
-                <div class="result-card">
-                    <h3>Generated SQL</h3>
-                    <div class="sql-output">
-                        <pre id="sql-output"></pre>
-                    </div>
-                    <button id="copy-sql-btn" class="secondary-btn">Copy SQL</button>
-                </div>
-
-                <!-- Retrieved Context -->
-                <div class="result-card">
-                    <h3>Retrieved Context</h3>
-                    <div class="context-section">
-                        <div class="context-item">
-                            <h4>Schema</h4>
-                            <pre id="schema-output"></pre>
+                <!-- Split View Layout -->
+                <div class="split-layout">
+                    <!-- Left Panel: Question & SQL -->
+                    <div class="left-panel">
+                        <div class="result-card">
+                            <h3>📝 Your Question</h3>
+                            <div class="question-display">
+                                <p id="question-display"></p>
+                            </div>
                         </div>
-                        <div class="context-item">
-                            <h4>Similar Examples</h4>
-                            <div id="examples-output"></div>
+
+                        <div class="result-card">
+                            <h3>🔍 Generated SQL</h3>
+                            <div class="sql-output">
+                                <pre id="sql-output"></pre>
+                            </div>
+                            <button id="copy-sql-btn" class="secondary-btn">Copy SQL</button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Metadata -->
-                <div class="result-card metadata">
-                    <div class="meta-item">
-                        <span class="meta-label">Database:</span>
-                        <span id="meta-db"></span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Retrieved Examples:</span>
-                        <span id="meta-examples"></span>
+                    <!-- Right Panel: Context -->
+                    <div class="right-panel">
+                        <div class="result-card">
+                            <h3>📊 Database Schema</h3>
+                            <div class="context-item">
+                                <pre id="schema-output"></pre>
+                            </div>
+                        </div>
+
+                        <div class="result-card">
+                            <h3>💡 Similar Examples (<span id="meta-examples">0</span>)</h3>
+                            <div class="examples-container" id="examples-output"></div>
+                        </div>
                     </div>
                 </div>
             </div>
