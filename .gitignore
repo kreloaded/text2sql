@@ -228,10 +228,6 @@ codet5p-spider-*
 *.safetensors
 model_checkpoints/
 
-# Colab notebooks with outputs
-text2sql.ipynb
-*.ipynb
-
 # Environment files with sensitive data
 backend/.env
 
