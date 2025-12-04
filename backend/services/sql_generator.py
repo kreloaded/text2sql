@@ -79,14 +79,7 @@ class SQLGenerator:
     def build_prompt(self, question: str, context: List[Dict[str, Any]]) -> str:
         """
         Build the input prompt from question and retrieved context.
-        Explicit instructions to prevent copying example patterns.
-
-        Args:
-            question: Natural language question
-            context: List of retrieved schema/example entries
-
-        Returns:
-            Formatted prompt string
+        Focus on generating SIMPLE, CORRECT SQL without overcomplicating.
         """
         prompt_parts = []
 
@@ -94,56 +87,103 @@ class SQLGenerator:
         schemas = [c for c in context if c.get("type") == "schema"]
         examples = [c for c in context if c.get("type") == "example"]
 
-        # Add TARGET database schema
+        # Add TARGET database schema FIRST (most important)
         if schemas:
             target_schema = schemas[0]
-            schema_text = target_schema.get("text", "") or target_schema.get(
-                "schema", ""
+            schema_text = (
+                target_schema.get("text", "") or target_schema.get("schema", "") or ""
             )
             if schema_text:
-                lines = schema_text.split("\n")
-                db_line = (
-                    [l for l in lines if l.startswith("Database:")][0]
-                    if any(l.startswith("Database:") for l in lines)
-                    else ""
-                )
-                table_lines = [l for l in lines if l.strip().startswith("- ")]
-
-                if db_line:
-                    prompt_parts.append(db_line)
-                if table_lines:
-                    prompt_parts.append("Tables:")
-                    prompt_parts.extend(table_lines)
+                prompt_parts.append("# Database Schema:")
+                prompt_parts.append(schema_text)
                 prompt_parts.append("")
 
-        # Add clear instruction separator
+        # Add examples ONLY if they're relevant (limit to 2-3 most relevant)
         if examples:
+            prompt_parts.append("# Similar Example Queries:")
             prompt_parts.append(
-                "# Reference Examples (for understanding SQL patterns only):"
+                "# NOTE: These are just examples. Generate SIMPLE, DIRECT SQL for the question below."
             )
             prompt_parts.append(
-                "# DO NOT copy these queries - generate NEW SQL based on the question below"
+                "# Do NOT add unnecessary GROUP BY, ORDER BY, or LIMIT unless the question asks for it."
             )
             prompt_parts.append("")
-            for example in examples[:3]:
+
+            # Sort by relevance (distance) and limit to top 2
+            examples_sorted = sorted(examples, key=lambda x: x.get("distance", 999))[:2]
+
+            for example in examples_sorted:
                 ex_question = example.get("question", "")
                 ex_sql = example.get("sql", "")
                 if ex_question and ex_sql:
-                    prompt_parts.append(f"Q: {ex_question}")
-                    prompt_parts.append(f"A: {ex_sql}")
+                    prompt_parts.append(f"Example Q: {ex_question}")
+                    prompt_parts.append(f"Example SQL: {ex_sql}")
                     prompt_parts.append("")
 
-        # Clear separator before actual question
-        prompt_parts.append("# Generate SQL for THIS question using the schema above:")
-        prompt_parts.append(f"Q: {question}")
-        prompt_parts.append("A:")
+        # Add explicit instructions for the target question
+        prompt_parts.append("# Instructions:")
+        prompt_parts.append("# 1. Write SIMPLE SQL that directly answers the question")
+        prompt_parts.append(
+            "# 2. Use exact equality (=) for 'is' questions, not >= or <="
+        )
+        prompt_parts.append(
+            "# 3. Only add GROUP BY if question asks 'for each' or 'by category'"
+        )
+        prompt_parts.append(
+            "# 4. Only add ORDER BY if question asks for 'sorted', 'ordered', 'top', 'highest', 'lowest'"
+        )
+        prompt_parts.append(
+            "# 5. Only add LIMIT if question asks for 'first N', 'top N', or specific count"
+        )
+        prompt_parts.append("")
+        prompt_parts.append("# Now generate SQL for THIS question:")
+        prompt_parts.append(f"Question: {question}")
+        prompt_parts.append("SQL:")
 
         final_prompt = "\n".join(prompt_parts)
-        print(
-            f"DEBUG: Built prompt with {len(context)} context entries, total length {len(final_prompt)} chars"
-        )
-        print(f"DEBUG: Prompt preview:\n{final_prompt[:500]}...")
         return final_prompt
+
+    def _clean_generated_sql(self, sql: str, question: str) -> str:
+        """
+        Post-process generated SQL to fix common mistakes.
+
+        Args:
+            sql: Generated SQL query
+            question: Original question
+
+        Returns:
+            Cleaned SQL query
+        """
+        sql = sql.strip()
+
+        # Fix common typos
+        sql = sql.replace("openning_year", "opening_year")
+
+        # If question asks for simple count and SQL has unnecessary complexity
+        question_lower = question.lower()
+        if "count" in question_lower and "how many" in question_lower:
+            # Check if SQL has unnecessary GROUP BY, ORDER BY, LIMIT
+            if (
+                "GROUP BY" in sql.upper()
+                and "for each" not in question_lower
+                and "by" not in question_lower
+            ):
+                # Remove unnecessary GROUP BY clauses for simple counts
+                import re
+
+                # Remove GROUP BY ... ORDER BY ... LIMIT patterns
+                sql = re.sub(r"\s+GROUP BY[^;]+", "", sql, flags=re.IGNORECASE)
+                sql = re.sub(r"\s+ORDER BY[^;]+", "", sql, flags=re.IGNORECASE)
+                sql = re.sub(r"\s+LIMIT\s+\d+", "", sql, flags=re.IGNORECASE)
+
+        # Fix >= when question says "is" (exact match)
+        if " is " in question_lower and ">=" in sql:
+            # Replace >= with = for "is" questions
+            import re
+
+            sql = re.sub(r">=\s*(\d+)", r"= \1", sql)
+
+        return sql.strip()
 
     def generate_sql(
         self,
@@ -153,19 +193,7 @@ class SQLGenerator:
         num_beams: int = 1,
         temperature: float = 0.7,
     ) -> str:
-        """
-        Generate SQL query from natural language question.
-
-        Args:
-            question: Natural language question
-            context: Optional retrieved context (schema/examples)
-            max_new_tokens: Maximum tokens to generate
-            num_beams: Number of beams for beam search
-            temperature: Sampling temperature
-
-        Returns:
-            Generated SQL query string
-        """
+        """Generate SQL query from natural language question."""
         try:
             # Build prompt with context if available
             if context:
@@ -173,18 +201,20 @@ class SQLGenerator:
             else:
                 prompt = f"Question: {question}\nSQL:"
 
-            print(f"DEBUG: Prompt length: {len(prompt)} chars")
             print(f"DEBUG: Generating SQL with max_new_tokens={max_new_tokens}")
-            print(f"DEBUG: Prompt: {prompt}")
 
             if self.use_api:
-                # Use HuggingFace Inference API
-                return self._generate_with_api(prompt, max_new_tokens)
+                sql_query = self._generate_with_api(prompt, max_new_tokens)
             else:
-                # Use local model
-                return self._generate_with_local_model(
+                sql_query = self._generate_with_local_model(
                     prompt, max_new_tokens, num_beams
                 )
+
+            # Clean the generated SQL
+            sql_query = self._clean_generated_sql(sql_query, question)
+
+            print(f"DEBUG: Final cleaned SQL: {sql_query}")
+            return sql_query
 
         except Exception as e:
             print(f"ERROR in generate_sql: {str(e)}")

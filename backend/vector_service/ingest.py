@@ -60,9 +60,15 @@ def main(input_path, output_dir=None):
     print("=" * 60)
 
     # Load data
+
     data = load_data(input_path)
     texts = [item["text"] for item in data]
-    metadata = [item.get("meta", {}) for item in data]
+    metadata = []
+    for item in data:
+        meta = item.get("meta", {}) or {}
+        meta = dict(meta)
+        meta["text"] = item.get("text", "")
+        metadata.append(meta)
 
     # Generate embeddings
     model = SentenceTransformer(MODEL_NAME)
